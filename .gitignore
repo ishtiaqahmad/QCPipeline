@@ -1,3 +1,4 @@
+.project
 .classpath
 *.iml
 *.idea
@@ -11,4 +12,3 @@ target
 /plugins
 /web-app/plugins
 /web-app/WEB-INF/classes
-.project
