@@ -1,4 +1,4 @@
-package nl.nmc.generalConfig
+package nl.nmc.general.config
 
 class Platform {
     Date dateCreated
@@ -6,7 +6,7 @@ class Platform {
     String name      // descriptive name
     String shortName
     String l1    // @TODO need to be given a more descriptive name
-    Integer SOP_Code
+    Integer sopCode
     String spike, ISspike
     double RSDQCThreshold, RSDRepsThreshold, RSDCalThreshold, RSDselect
 

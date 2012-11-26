@@ -18,44 +18,38 @@
         <li><g:link controller="data" action="view" id="${data.id}">${data.name}</g:link></li>
     </g:each>
 </ul>
- <h2>Settings section</h2>
+
+<h2>Settings section</h2>
 Current associated setting with project  ${project.name}
 <select name="setting">
     <g:each in="${project.settings}" var="setting">
-        <option value="${setting?.id}" >${setting?.name?.encodeAsHTML()}</option>
+        <option value="${setting?.id}">${setting?.name}</option>
     </g:each>
 </select>
 
 <h4>Define New Project setting here!</h4>
-<g:form name="createSetting" action="addSetting">
+<g:form name="createSetting" action="addSetting" controller="project" id="${project?.id}">
+    Name: <g:field type="text" name="name" required="true" value="Default Setting"/>
+    <br>
     Select Platform:
-    <select name="platform">
-        <g:each in="${config.platforms}" var="plat">
-            <option value="${plat?.id}" >${plat?.encodeAsHTML()}</option>
-        </g:each>
-    </select>
+    <g:select from="${config.platforms}" name="platform" value="${platform?.id}" optionKey="id"/>
     <br>
     Matrix Used:
-    <select name="matrix">
-        <g:each in="${config.matrixes}" var="matrix">
-            <option value="${matrix?.id}" >${matrix?.encodeAsHTML()}</option>
-        </g:each>
-    </select>
+    <g:select from="${config.matrixes}" name="matrix" value="${matrix?.id}" optionKey="id"/>
+    <br>
+    Stabilizer
+    <g:select from="${config.additiveStabilizers}" name="additive" value="${additive?.id}" optionKey="id"/>
     <br>
     Options (can be combined):
     <br>
-    <select name="options" multiple="true">
-        <g:each in="${ options=[
-                                '0': 'DEBUG: Does not fill output column when finished',
-                                '1': 'FORCE: recreate settings.xlsm',
-                                '2': 'FORCE: recreate samplelist.xlsx',
-                                '3': 'FORCE: reload data (removes mea\\data.mat)',
-                                '4': 'OVERRULE: If codes are non NMC force type to validation (default: study/normal)',
-                                '5': 'DEBUG: leave setting.xlsm open upon creation',
-            ]}" var="opt">
-            <option value="${opt.key}">${opt?.value.encodeAsHTML()}</option>
-        </g:each>
-    </select>
+    <g:select from="${options=[
+            '0': 'DEBUG: Does not fill output column when finished',
+            '1': 'FORCE: recreate settings.xlsm',
+            '2': 'FORCE: recreate samplelist.xlsx',
+            '3': 'FORCE: reload data (removes mea\\data.mat)',
+            '4': 'OVERRULE: If codes are non NMC force type to validation (default: study/normal)',
+            '5': 'DEBUG: leave setting.xlsm open upon creation',
+    ]}" name="options" multiple="true" value="${options?.key}" optionKey="key" optionValue="value"/>
     <br>
     <g:submitButton name="submit" value="createProjectSetting"/>
 </g:form>

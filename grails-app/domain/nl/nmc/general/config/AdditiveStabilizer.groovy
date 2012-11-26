@@ -1,4 +1,4 @@
-package nl.nmc.generalConfig
+package nl.nmc.general.config
 
 class AdditiveStabilizer {
     Date dateCreated

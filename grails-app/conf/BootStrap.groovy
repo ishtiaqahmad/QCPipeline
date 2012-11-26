@@ -1,6 +1,9 @@
-import nl.nmc.*
+import nl.nmc.Project
+import nl.nmc.general.config.AdditiveStabilizer
+import nl.nmc.general.config.GeneralConfig
+import nl.nmc.general.config.Matrix
+import nl.nmc.general.config.Platform
 import nl.nmc.importers.GeneralConfigImporter
-import nl.nmc.generalConfig.*
 
 class BootStrap {
     public static def generalConfig;

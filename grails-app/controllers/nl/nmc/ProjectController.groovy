@@ -1,5 +1,6 @@
 package nl.nmc
-import nl.nmc.generalConfig.*
+
+import nl.nmc.general.config.*
 
 class ProjectController {
     enum AcceptedExt {
@@ -25,14 +26,29 @@ class ProjectController {
         if (!params?.id) {
             redirect(action: "index", params: params)
         }
-        [project: Project.get(params.id), config:GeneralConfig.get(1)]
+        [project: Project.get(params.id), config: GeneralConfig.get(1)]
     }
 
     def addSetting() {
-        def project = Project.get(params.id) ?: null
-        if (project) {
-            def setting = new Settings(settings: [:])
+        if (params?.submit == "createProjectSetting") {
+            def project = Project.get(params.id) ?: null
+            if (project) {
+                println params.options
+                def platform = Platform.get(params.platform) ?: null
+                def matrix = Matrix.get(params.matrix) ?: null
+                def additive = AdditiveStabilizer.get(params.additive) ?: null
+                if (platform && matrix && additive) {
+                    def setting = new Settings(name: params.name, project: project, platform: platform, matrix: matrix, additiveStabilizers: additive)
+                    if (!setting.save(flush: true)) {
+                        flash.message = "was unable to save the Setting - ${params}"
+                    }
+                }
+
+            }
         }
+
+        //return to where you came from...
+        redirect(action: "view", params: [id: params.id])
     }
 
     def addFile() {

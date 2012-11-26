@@ -80,7 +80,7 @@ class GeneralConfigImporter extends AbstractExcelImporter {
                             columnMap << [(CellReference.convertNumToColString(columnIndex)):'shortName']
                             break
                         case ~/^SOP/:
-                            columnMap << [(CellReference.convertNumToColString(columnIndex)):'SOP_Code']
+                            columnMap << [(CellReference.convertNumToColString(columnIndex)):'sopCode']
                             break
                         case ~/(?i)^spike/:
                             columnMap << [(CellReference.convertNumToColString(columnIndex)):'spike']
@@ -145,7 +145,7 @@ class GeneralConfigImporter extends AbstractExcelImporter {
             l3: ([expectedType: org.grails.plugins.excelimport.ExpectedPropertyType.StringType, defaultValue: null]),
             name: ([expectedType: org.grails.plugins.excelimport.ExpectedPropertyType.StringType, defaultValue: null]),
             shortName: ([expectedType: org.grails.plugins.excelimport.ExpectedPropertyType.StringType, defaultValue: null]),
-            SOP_Code: ([expectedType: org.grails.plugins.excelimport.ExpectedPropertyType.IntType, defaultValue: 0]),
+            sopCode: ([expectedType: org.grails.plugins.excelimport.ExpectedPropertyType.IntType, defaultValue: 0]),
             spike: ([expectedType: org.grails.plugins.excelimport.ExpectedPropertyType.StringType, defaultValue: null]),
             ISspike: ([expectedType: org.grails.plugins.excelimport.ExpectedPropertyType.StringType, defaultValue: null]),
             RSDQCThreshold: ([expectedType: org.grails.plugins.excelimport.ExpectedPropertyType.DoubleType, defaultValue: 0.0]),

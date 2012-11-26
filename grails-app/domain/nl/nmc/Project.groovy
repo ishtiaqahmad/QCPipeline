@@ -12,8 +12,9 @@ class Project {
         description(nullable: true, blank: true)
     }
 
-    static transients = ['datas','settings']
+    static transients = ['datas', 'settings']
 
+    @Override
     String toString() {
         return name
     }
@@ -28,7 +29,8 @@ class Project {
     List getDatas() {
         return Data.findAllByProject(this)
     }
-    List getSettings(){
+
+    List getSettings() {
         return Settings.findAllByProject(this)
     }
 }
