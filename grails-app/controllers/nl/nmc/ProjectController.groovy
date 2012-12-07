@@ -1,6 +1,10 @@
 package nl.nmc
 
-import nl.nmc.general.config.*
+import nl.nmc.exporters.JobListExporter
+import nl.nmc.general.config.AdditiveStabilizer
+import nl.nmc.general.config.GeneralConfig
+import nl.nmc.general.config.Matrix
+import nl.nmc.general.config.Platform
 
 class ProjectController {
     enum AcceptedExt {
@@ -30,21 +34,20 @@ class ProjectController {
     }
 
     def addSetting() {
-        if (params?.submit == "createProjectSetting") {
-            def project = Project.get(params.id) ?: null
-            if (project) {
-                println params.options
-                def platform = Platform.get(params.platform) ?: null
-                def matrix = Matrix.get(params.matrix) ?: null
-                def additive = AdditiveStabilizer.get(params.additive) ?: null
-                if (platform && matrix && additive) {
-                    def setting = new Settings(name: params.name, project: project, platform: platform, matrix: matrix, additiveStabilizers: additive)
-                    if (!setting.save(flush: true)) {
-                        flash.message = "was unable to save the Setting - ${params}"
-                    }
-                }
+        def project = Project.get(params.id) ?: null
+        if (params?.submit == "createProjectSetting" && project) {
+            def platform = Platform.get(params.platform) ?: null
+            def matrix = Matrix.get(params.matrix) ?: null
+            def additive = AdditiveStabilizer.get(params.additive) ?: null
+            def opt = params.options as List ?: null
 
+            if (platform && matrix && additive) {
+                def setting = new Settings(name: params.name, settings: ['options': opt], project: project, platforms: platform, matrixes: matrix, additiveStabilizers: additive)
+                if (!setting.save(flush: true)) {
+                    flash.message = "was unable to save the Setting - ${params}"
+                }
             }
+
         }
 
         //return to where you came from...
@@ -118,4 +121,65 @@ class ProjectController {
         redirect(action: "view", params: params)
     }
 
+    def prepareQCReport() {
+        if (!params?.id) {
+            redirect(action: "index", params: params)
+        }
+
+        def project = Project.get(params.id) ?: null
+        def setting = Settings.get(params.setting) ?: null
+
+        if (params?.submit == "prepare QC Report" && project && setting) {
+            //cross validate it
+            if (setting.project == project) {
+
+                println grailsApplication.config
+
+
+                /*
+                def folderLocation = "/tmp/${UUID.randomUUID().toString()}"
+                def jobListLocationFile = new File("${folderLocation}")
+                jobListLocationFile.mkdirs()
+
+                def jobListFile = new File("${jobListLocationFile}/DCL_Joblist.xlsx")
+                */
+
+                /*
+                def jobListFile = new File("/tmp/DCL_Joblist.xlsx")
+                jobListFile.exists() && jobListFile.delete()
+                jobListFile.setWritable(true, false) && jobListFile.canWrite()
+
+                JobListExporter jobListExporter = new JobListExporter()
+                jobListExporter.addSetting(setting)
+                jobListExporter.export()
+                FileOutputStream fileOut = new FileOutputStream(jobListFile);
+                jobListExporter.save(fileOut)
+                fileOut.close();
+                println(jobListFile)
+
+                // test for already existing file
+                def jobListFile2 = new File("/tmp/DCL_Joblist_v3.xlsx")
+                JobListExporter jobListExporter2 = new JobListExporter(jobListFile2.absolutePath)
+                jobListExporter2.addSetting(setting)
+                jobListExporter2.export()
+                FileOutputStream fileOut2 = new FileOutputStream(jobListFile2);
+                jobListExporter2.save(fileOut2)
+                fileOut2.close();
+                */
+                /*
+                ProcessBuilder processBuilder = new ProcessBuilder("/Applications/Microsoft Office 2011/Microsoft Excel.app/Contents/MacOS/Microsoft Excel")
+                processBuilder = processBuilder.directory(jobListLocationFile)
+                processBuilder = processBuilder.command("${file}")
+                Process p = processBuilder.start()
+                p.waitFor()
+
+                def result = [project: project, setting: setting]
+
+                render result as JSON
+                */
+            } else
+                println "Error: Project and Setting doesnot crospond to each other"
+        }
+        redirect(action: "index", params: [])
+    }
 }

@@ -9,6 +9,10 @@ class Settings {
     Date lastUpdated
     HashMap settings
     String name
+    List<Platform> platforms
+    List<Matrix> matrixes
+    List<AdditiveStabilizer> additiveStabilizers
+
 
     static constraints = {
 

@@ -20,12 +20,13 @@
 </ul>
 
 <h2>Settings section</h2>
-Current associated setting with project  ${project.name}
-<select name="setting">
-    <g:each in="${project.settings}" var="setting">
-        <option value="${setting?.id}">${setting?.name}</option>
-    </g:each>
-</select>
+<div style="margin: 5px; width: 40%; border: 1px dotted #FF0000">
+<g:form name="prepare" action="prepareQCReport" controller="project" id="${project?.id}">
+    Current associated setting with project  ${project.name}
+    <g:select from="${project?.settings}" name="setting" value="${setting?.id}" optionValue="name" optionKey="id"/>
+    <g:submitButton name="submit" value="prepare QC Report"/>
+</g:form>
+</div>
 
 <h4>Define New Project setting here!</h4>
 <g:form name="createSetting" action="addSetting" controller="project" id="${project?.id}">
@@ -42,6 +43,7 @@ Current associated setting with project  ${project.name}
     <br>
     Options (can be combined):
     <br>
+    // need to be moved to Congif.groovy
     <g:select from="${options=[
             '0': 'DEBUG: Does not fill output column when finished',
             '1': 'FORCE: recreate settings.xlsm',

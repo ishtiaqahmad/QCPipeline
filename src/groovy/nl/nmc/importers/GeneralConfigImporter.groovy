@@ -1,17 +1,10 @@
 package nl.nmc.importers
 
-import org.grails.plugins.excelimport.AbstractExcelImporter
-import org.grails.plugins.excelimport.DefaultImportCellCollector
-
-import static org.grails.plugins.excelimport.ExpectedPropertyType.StringType
-import static org.grails.plugins.excelimport.ExpectedPropertyType.StringType
-import static org.grails.plugins.excelimport.ExpectedPropertyType.StringType
-import static org.grails.plugins.excelimport.ExpectedPropertyType.StringType
-import static org.grails.plugins.excelimport.ExpectedPropertyType.IntType
-import static org.grails.plugins.excelimport.ExpectedPropertyType.DoubleType
-import org.codehaus.groovy.grails.commons.ApplicationHolder
 import org.apache.poi.ss.usermodel.Cell
 import org.apache.poi.ss.util.CellReference
+import org.codehaus.groovy.grails.commons.ApplicationHolder
+import org.grails.plugins.excelimport.AbstractExcelImporter
+import org.grails.plugins.excelimport.DefaultImportCellCollector
 
 /**
  * Created with IntelliJ IDEA.
@@ -63,42 +56,42 @@ class GeneralConfigImporter extends AbstractExcelImporter {
                 if (cell.getCellType() == Cell.CELL_TYPE_STRING) {
                     String stringValue = cell.stringCellValue
 
-                    switch(stringValue) {
+                    switch (stringValue) {
                         case ~/^L1/:
-                            columnMap << [(CellReference.convertNumToColString(columnIndex)):'l1']     //0-based base-10 column and returns a ALPHA-26
+                            columnMap << [(CellReference.convertNumToColString(columnIndex)): 'l1']     //0-based base-10 column and returns a ALPHA-26
                             break
                         case ~/^L2/:
-                            columnMap << [(CellReference.convertNumToColString(columnIndex)):'l2']
+                            columnMap << [(CellReference.convertNumToColString(columnIndex)): 'l2']
                             break
                         case ~/^L3/:
-                            columnMap << [(CellReference.convertNumToColString(columnIndex)):'l3']
+                            columnMap << [(CellReference.convertNumToColString(columnIndex)): 'l3']
                             break
                         case ~/^Platform|Matrix|Additive/:   // will map to name
-                            columnMap << [(CellReference.convertNumToColString(columnIndex)):'name']
+                            columnMap << [(CellReference.convertNumToColString(columnIndex)): 'name']
                             break
                         case ~/^platform/:
-                            columnMap << [(CellReference.convertNumToColString(columnIndex)):'shortName']
+                            columnMap << [(CellReference.convertNumToColString(columnIndex)): 'shortName']
                             break
                         case ~/^SOP/:
-                            columnMap << [(CellReference.convertNumToColString(columnIndex)):'sopCode']
+                            columnMap << [(CellReference.convertNumToColString(columnIndex)): 'sopCode']
                             break
                         case ~/(?i)^spike/:
-                            columnMap << [(CellReference.convertNumToColString(columnIndex)):'spike']
+                            columnMap << [(CellReference.convertNumToColString(columnIndex)): 'spike']
                             break
                         case ~/(?i)^RSDQCThreshold/:
-                            columnMap << [(CellReference.convertNumToColString(columnIndex)):'RSDQCThreshold']
+                            columnMap << [(CellReference.convertNumToColString(columnIndex)): 'RSDQCThreshold']
                             break
                         case ~/(?i)^RSDRepsThreshold/:
-                            columnMap << [(CellReference.convertNumToColString(columnIndex)):'RSDRepsThreshold']
+                            columnMap << [(CellReference.convertNumToColString(columnIndex)): 'RSDRepsThreshold']
                             break
                         case ~/(?i)^RSDCalThreshold/:
-                            columnMap << [(CellReference.convertNumToColString(columnIndex)):'RSDCalThreshold']
+                            columnMap << [(CellReference.convertNumToColString(columnIndex)): 'RSDCalThreshold']
                             break
                         case ~/(?i)^ISspike/:
-                            columnMap << [(CellReference.convertNumToColString(columnIndex)):'ISspike']
+                            columnMap << [(CellReference.convertNumToColString(columnIndex)): 'ISspike']
                             break
                         case ~/(?i)^RSDselect/:
-                            columnMap << [(CellReference.convertNumToColString(columnIndex)):'RSDselect']
+                            columnMap << [(CellReference.convertNumToColString(columnIndex)): 'RSDselect']
                             break
                         default:
                             break
