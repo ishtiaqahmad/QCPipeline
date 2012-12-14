@@ -128,44 +128,63 @@ class ProjectController {
 
         def project = Project.get(params.id) ?: null
         def setting = Settings.get(params.setting) ?: null
+        def dataList = project?.datas
 
-        if (params?.submit == "prepare QC Report" && project && setting) {
+        if (params?.submit == "prepare QC Report" && project && setting && dataList) {
             //cross validate it
             if (setting.project == project) {
 
-                println grailsApplication.config
-
-
-                /*
-                def folderLocation = "/tmp/${UUID.randomUUID().toString()}"
+                def folderLocation = "/Users/ishtiaq/VMShare/Data/DataJobs_v3/"
                 def jobListLocationFile = new File("${folderLocation}")
                 jobListLocationFile.mkdirs()
 
-                def jobListFile = new File("${jobListLocationFile}/DCL_Joblist.xlsx")
-                */
+                def jobListFile = new File("${jobListLocationFile}/DCL Joblist_v3.xlsx")
+                JobListExporter jobListExporter
 
-                /*
-                def jobListFile = new File("/tmp/DCL_Joblist.xlsx")
-                jobListFile.exists() && jobListFile.delete()
-                jobListFile.setWritable(true, false) && jobListFile.canWrite()
-
-                JobListExporter jobListExporter = new JobListExporter()
+                if (jobListFile.exists())
+                    jobListExporter = new JobListExporter(jobListFile.absolutePath)
+                else
+                    jobListExporter = new JobListExporter()
                 jobListExporter.addSetting(setting)
                 jobListExporter.export()
+
+                jobListFile.setWritable(true, false) && jobListFile.canWrite()
                 FileOutputStream fileOut = new FileOutputStream(jobListFile);
                 jobListExporter.save(fileOut)
                 fileOut.close();
                 println(jobListFile)
 
-                // test for already existing file
-                def jobListFile2 = new File("/tmp/DCL_Joblist_v3.xlsx")
-                JobListExporter jobListExporter2 = new JobListExporter(jobListFile2.absolutePath)
-                jobListExporter2.addSetting(setting)
-                jobListExporter2.export()
-                FileOutputStream fileOut2 = new FileOutputStream(jobListFile2);
-                jobListExporter2.save(fileOut2)
-                fileOut2.close();
-                */
+                // add measurements files to folder stature
+                def projectFolderLocation = "${folderLocation + setting.platforms.toArray()[0].toString()}/${project.name}"
+                println projectFolderLocation
+                def projectFolder = new File("${projectFolderLocation}")
+                projectFolder.mkdirs()
+                def inputFolder = new File("${projectFolderLocation}/input")
+                inputFolder.mkdir()
+                def meaFolder = new File("${projectFolderLocation}/mea")
+                meaFolder.mkdir()
+                def outputFolder = new File("${projectFolderLocation}/output")
+                outputFolder.mkdir()
+
+                def ant = new AntBuilder()
+                dataList.each {
+                    ant.copy(file: new File(project.nameOfDirectory() + "/" + it.filename), tofile: new File(projectFolderLocation + "/mea/" + it.name), overwrite: true)
+                }
+
+                //zippedFile.setWritable(true, false) && zippedFile.canWrite()
+                ant.zip(
+                        basedir: projectFolderLocation,
+                        destfile: "${folderLocation}/${project.name}.zip",
+                        level: 9
+                )
+                def zippedFile = new File("${folderLocation}/${project.name}.zip")
+                if (zippedFile.exists()) {
+                    response.setContentType("application/octet-stream")
+                    response.setHeader("Content-disposition", "filename=${project.name}.zip")
+                    response.outputStream << zippedFile.bytes
+                    return
+                }
+
                 /*
                 ProcessBuilder processBuilder = new ProcessBuilder("/Applications/Microsoft Office 2011/Microsoft Excel.app/Contents/MacOS/Microsoft Excel")
                 processBuilder = processBuilder.directory(jobListLocationFile)
