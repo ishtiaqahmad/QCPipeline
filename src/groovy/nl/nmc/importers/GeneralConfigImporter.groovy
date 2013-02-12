@@ -28,15 +28,15 @@ class GeneralConfigImporter extends AbstractExcelImporter {
     }
 
     List<Map> getPlatformList() {
-        def sheet = workbook.getSheet(CONFIG_PLATFORM_COLUMN_MAP.sheet)
+        def sheet = workbook.getSheet(s_CONFIG_PLATFORM_COLUMN_MAP.sheet)
         def excelRow = sheet.getRow(0)
         def columnMap = buildColumnMapFromHeaderRow(excelRow)
-        CONFIG_PLATFORM_COLUMN_MAP.columnMap = columnMap
+        s_CONFIG_PLATFORM_COLUMN_MAP.columnMap = columnMap
         excelImportService.columns(
                 workbook,
-                CONFIG_PLATFORM_COLUMN_MAP,
+                s_CONFIG_PLATFORM_COLUMN_MAP,
                 cellReporter,
-                configuratiomMap
+                s_configurationMap
         )
     }
 
@@ -48,7 +48,7 @@ class GeneralConfigImporter extends AbstractExcelImporter {
                 def cell = excelRow.getCell(columnIndex)
                 /*
                  excelImportService don't tack 0-based cell index
-                 CellRefrence is needed to go back 0-based base-10 column and returns a ALPHA-26
+                 CellReference is needed to go back 0-based base-10 column and returns a ALPHA-26
                  */
                 if (cell || cell.getCellType() == Cell.CELL_TYPE_BLANK) {
                     // Can't be this cell - it's empty
@@ -105,34 +105,34 @@ class GeneralConfigImporter extends AbstractExcelImporter {
     }
 
     List<Map> getMatrixList() {
-        def sheet = workbook.getSheet(CONFIG_MATRIX_COLUMN_MAP.sheet)
+        def sheet = workbook.getSheet(s_CONFIG_MATRIX_COLUMN_MAP.sheet)
         def excelRow = sheet.getRow(0)
         def columnMap = buildColumnMapFromHeaderRow(excelRow)
-        CONFIG_MATRIX_COLUMN_MAP.columnMap = columnMap
+        s_CONFIG_MATRIX_COLUMN_MAP.columnMap = columnMap
 
         excelImportService.columns(
                 workbook,
-                CONFIG_MATRIX_COLUMN_MAP,
+                s_CONFIG_MATRIX_COLUMN_MAP,
                 cellReporter,
-                configuratiomMap
+                s_configurationMap
         )
 
     }
 
     List<Map> getAdditiveList() {
-        def sheet = workbook.getSheet(CONFIG_ADDITIVE_COLUMN_MAP.sheet)
+        def sheet = workbook.getSheet(s_CONFIG_ADDITIVE_COLUMN_MAP.sheet)
         def excelRow = sheet.getRow(0)
         def columnMap = buildColumnMapFromHeaderRow(excelRow)
-        CONFIG_ADDITIVE_COLUMN_MAP.columnMap = columnMap
+        s_CONFIG_ADDITIVE_COLUMN_MAP.columnMap = columnMap
         excelImportService.columns(
                 workbook,
-                CONFIG_ADDITIVE_COLUMN_MAP,
+                s_CONFIG_ADDITIVE_COLUMN_MAP,
                 cellReporter,
-                configuratiomMap
+                s_configurationMap
         )
     }
 
-    static Map configuratiomMap = [
+    static Map s_configurationMap = [
             l1: ([expectedType: org.grails.plugins.excelimport.ExpectedPropertyType.StringType, defaultValue: null]),
             l2: ([expectedType: org.grails.plugins.excelimport.ExpectedPropertyType.StringType, defaultValue: null]),
             l3: ([expectedType: org.grails.plugins.excelimport.ExpectedPropertyType.StringType, defaultValue: null]),
@@ -147,7 +147,7 @@ class GeneralConfigImporter extends AbstractExcelImporter {
             RSDselect: ([expectedType: org.grails.plugins.excelimport.ExpectedPropertyType.DoubleType, defaultValue: 0.0]),
     ]
 
-    static Map CONFIG_PLATFORM_COLUMN_MAP = [
+    static Map s_CONFIG_PLATFORM_COLUMN_MAP = [
             sheet: 'SP20_L1',
             startRow: 1,
             columnMap: [
@@ -164,7 +164,7 @@ class GeneralConfigImporter extends AbstractExcelImporter {
             ]
     ]
 
-    static Map CONFIG_MATRIX_COLUMN_MAP = [
+    static Map s_CONFIG_MATRIX_COLUMN_MAP = [
             sheet: 'SP20_L2',
             startRow: 1,
             columnMap: [
@@ -173,7 +173,7 @@ class GeneralConfigImporter extends AbstractExcelImporter {
             ]
     ]
 
-    static Map CONFIG_ADDITIVE_COLUMN_MAP = [
+    static Map s_CONFIG_ADDITIVE_COLUMN_MAP = [
             sheet: 'SP20_L3',
             startRow: 1,
             columnMap: [

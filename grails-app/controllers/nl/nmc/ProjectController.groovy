@@ -1,10 +1,12 @@
 package nl.nmc
 
+import grails.converters.JSON
 import nl.nmc.exporters.JobListExporter
 import nl.nmc.general.config.AdditiveStabilizer
 import nl.nmc.general.config.GeneralConfig
 import nl.nmc.general.config.Matrix
 import nl.nmc.general.config.Platform
+import nl.nmc.importers.SampleListImporter
 
 class ProjectController {
     enum AcceptedExt {
@@ -31,6 +33,13 @@ class ProjectController {
             redirect(action: "index", params: params)
         }
         [project: Project.get(params.id), config: GeneralConfig.get(1)]
+    }
+
+    def viewSampleList() {
+        if (!params?.id) {
+            redirect(action: "index", params: params)
+        }
+        [project: Project.get(params.id)]
     }
 
     def addSetting() {
@@ -128,58 +137,186 @@ class ProjectController {
 
         def project = Project.get(params.id) ?: null
         def setting = Settings.get(params.setting) ?: null
+        def dataList = project?.datas
 
-        if (params?.submit == "prepare QC Report" && project && setting) {
+        if (params?.submit == "prepare QC Report" && project && setting && dataList) {
             //cross validate it
             if (setting.project == project) {
 
-                println grailsApplication.config
-
-
-                /*
-                def folderLocation = "/tmp/${UUID.randomUUID().toString()}"
+                def folderLocation = grailsApplication.config.dataFolder
+                folderLocation = folderLocation.replaceAll(/"/, '')
                 def jobListLocationFile = new File("${folderLocation}")
                 jobListLocationFile.mkdirs()
 
-                def jobListFile = new File("${jobListLocationFile}/DCL_Joblist.xlsx")
-                */
+                def jobListFile = new File(jobListLocationFile.absolutePath + File.separator + "DCL Joblist_v3.xlsx")
+                JobListExporter jobListExporter
 
-                /*
-                def jobListFile = new File("/tmp/DCL_Joblist.xlsx")
-                jobListFile.exists() && jobListFile.delete()
-                jobListFile.setWritable(true, false) && jobListFile.canWrite()
-
-                JobListExporter jobListExporter = new JobListExporter()
+                if (jobListFile.exists())
+                    jobListExporter = new JobListExporter(jobListFile.absolutePath)
+                else
+                    jobListExporter = new JobListExporter()
                 jobListExporter.addSetting(setting)
                 jobListExporter.export()
+
+                jobListFile.setWritable(true, false) && jobListFile.canWrite()
                 FileOutputStream fileOut = new FileOutputStream(jobListFile);
                 jobListExporter.save(fileOut)
                 fileOut.close();
-                println(jobListFile)
 
-                // test for already existing file
-                def jobListFile2 = new File("/tmp/DCL_Joblist_v3.xlsx")
-                JobListExporter jobListExporter2 = new JobListExporter(jobListFile2.absolutePath)
-                jobListExporter2.addSetting(setting)
-                jobListExporter2.export()
-                FileOutputStream fileOut2 = new FileOutputStream(jobListFile2);
-                jobListExporter2.save(fileOut2)
-                fileOut2.close();
-                */
+                // add measurements files to folder stature
+                def projectFolderLocation = "${folderLocation + setting.platforms.toArray()[0].toString()}/${project.name}"
+                def projectFolder = new File("${projectFolderLocation}")
+                projectFolder.mkdirs()
+                def inputFolder = new File("${projectFolderLocation + File.separator }input")
+                inputFolder.mkdir()
+                def meaFolder = new File("${projectFolderLocation + File.separator}mea")
+                meaFolder.mkdir()
+                def outputFolder = new File("${projectFolderLocation + File.separator}output")
+                outputFolder.mkdir()
+
+                def ant = new AntBuilder()
+                dataList.each {
+                    ant.copy(file: new File(project.nameOfDirectory() + File.separator + it.filename), tofile: new File(projectFolderLocation + File.separator + "mea" + File.separator + it.name), overwrite: true)
+                }
                 /*
-                ProcessBuilder processBuilder = new ProcessBuilder("/Applications/Microsoft Office 2011/Microsoft Excel.app/Contents/MacOS/Microsoft Excel")
+                //zippedFile.setWritable(true, false) && zippedFile.canWrite()
+                ant.zip(
+                        basedir: projectFolderLocation,
+                        destfile: "${folderLocation}/${project.name}.zip",
+                        level: 9
+                )
+                def zippedFile = new File("${folderLocation}/${project.name}.zip")
+                if (zippedFile.exists()) {
+                    response.setContentType("application/octet-stream")
+                    response.setHeader("Content-disposition", "filename=${project.name}.zip")
+                    response.outputStream << zippedFile.bytes
+                    return
+                }
+
+                */
+
+                def commandLiteral = grailsApplication.config.matlabCommand
+                commandLiteral = commandLiteral.replaceAll(/"/, '')
+                /*
+                def scriptFile = new File("/tmp/test.m")
+                if (!scriptFile.exists())
+                    scriptFile.createNewFile()
+                else
+                    scriptFile.delete()
+
+                scriptFile << "addpath('/Users/ishtiaq/Documents/MATLAB/QCreport31072012/NMC_v3', '-begin');${System.getProperty("line.separator")}addpath('/Users/ishtiaq/Documents/MATLAB/QCreport31072012/tools', '-begin');${System.getProperty("line.separator")}addpath('/Users/ishtiaq/Documents/MATLAB', '-begin');${System.getProperty("line.separator")}path${System.getProperty("line.separator")}dclqc_v3()"
+                */
+                println("${commandLiteral}")
+                ant.exec(outputproperty: "cmdOut",
+                        errorproperty: "cmdErr",
+                        resultproperty: "exitValue",
+                        failonerror: "true",
+                        dir: "${jobListLocationFile}",
+                        executable: "${commandLiteral}") {
+                    arg(line: "-nodesktop -nosplash -logfile /tmp/matlab_log -r \"dclqc_v3(1)\"")
+                }
+
+                def result = new Expando(
+                        text: ant.project.properties.cmdOut,
+                        error: ant.project.properties.cmdErr,
+                        exitValue: ant.project.properties.exitValue as Integer,
+                        toString: {text}
+                )
+                println ant.project.properties.cmdOut
+                println ant.project.properties.cmdErr
+
+                if (result.exitValue != 0) {
+                    throw new Exception("""command failed with ${result.exitValue}
+                        executed: ${commandLiteral}
+                        error: ${result.error}
+                        text: ${result.text} ${}""")
+
+                } else {
+                    /**
+                     *  successful??
+                     *  clear the old sample list
+                     */
+                    project.getSamples()?.each { s ->
+                        s.delete(flush: true)
+                    }
+                    def importer = new SampleListImporter("${projectFolderLocation + File.separator }input" + File.separator + "samplelist.xlsx")
+                    def sampleListMap = importer.getSampleList()
+                    sampleListMap.each { Map sampleParams ->
+                        new Sample(project: project,
+                                sampleOrder: sampleParams['sampleOrder'] as int,
+                                name: sampleParams['name'],
+                                sampleID: sampleParams['sampleID'],
+                                level: sampleParams['level'],
+                                outlier: "${sampleParams['outlier'] as int}".toBoolean(),
+                                suspect: "${sampleParams['suspect'] as int}".toBoolean(),
+                                comment: sampleParams['comment'],
+                                batch: sampleParams['batch'] as int,
+                                preparation: sampleParams['preparation'] as int,
+                                injection: sampleParams['injection'] as int,
+                                sample: "${sampleParams['sample'] as int}".toBoolean(),
+                                qc: "${sampleParams['qc'] as int}".toBoolean(),
+                                cal: "${sampleParams['cal'] as int}".toBoolean(),
+                                blank: "${sampleParams['blank'] as int}".toBoolean(),
+                                wash: "${sampleParams['wash'] as int}".toBoolean(),
+                                sst: "${sampleParams['sst']}".toBoolean(),
+                                proc: "${sampleParams['proc'] as int}".toBoolean()
+                        ).save(flush: true)
+                    }
+                }
+
+                /*
+                ProcessBuilder processBuilder = new ProcessBuilder("/Applications/MATLAB_R2012a.app/Contents/MacOS/StartMATLAB")
                 processBuilder = processBuilder.directory(jobListLocationFile)
-                processBuilder = processBuilder.command("${file}")
+                processBuilder..command("${folderLocation}/${project.name}")
                 Process p = processBuilder.start()
+                println p.dump()
+
+                p.consumeProcessOutput(System.out, System.err)
+
                 p.waitFor()
 
+                println "Matlab exit value: ${p.exitValue()}"
+                */
+
+                /*
                 def result = [project: project, setting: setting]
 
                 render result as JSON
                 */
             } else
                 println "Error: Project and Setting doesnot crospond to each other"
+        } else {
+            println("Error: Either one of the Project, Setting or Data files are missing... dump:${project}, ${setting}, ${dataList}")
         }
+
         redirect(action: "index", params: [])
+    }
+
+    def listSamples = {
+        if (!params?.id) {
+        }
+        def project = Project.get(params.id) ?: null
+        if (project) {
+            render project.samples as JSON
+        }
+    }
+
+    def jsonProject() {
+        if (!params?.id) {
+            response.status = 404 //Not Found
+        }
+        def project = Project.get(params.id) ?: null
+        def rowMap = [:]
+        if (project) {
+            rowMap << [projectName: project.name]
+            def dataList = project?.datas ?: []
+            rowMap << [dataFile: dataList]
+            def setting = Settings.get(params.setting) ?: project.settings
+            rowMap << [setting: setting]
+            render rowMap as JSON
+        } else {
+            response.status = 404 //Not Found
+            render """This Project ID="${params?.id}" does not exist. Request must include project ID"""
+        }
     }
 }
