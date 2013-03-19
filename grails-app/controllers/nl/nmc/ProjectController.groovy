@@ -63,67 +63,71 @@ class ProjectController {
         redirect(action: "view", params: [id: params.id])
     }
 
-    def addFile() {
-        def uploadedfile = request.getFile('fileUpload')
+    def addFiles() {
+        def uploadedFiles = request.getFiles('fileUpload')
 
         def project = Project.get(params.id) ?: null
 
-        if (!uploadedfile.isEmpty() && project) {
+        if (!uploadedFiles.isEmpty() && project) {
 
-            //determine extension of uploaded file
-            def filename = uploadedfile.getOriginalFilename().toLowerCase()
-            def ext = filename.tokenize(".")[-1]
+            uploadedFiles.each {  uploadedfile ->
 
-            // select correct way of processing the file based on extension
-            switch (ext) {
+                //determine extension of uploaded file
+                def filename = uploadedfile.getOriginalFilename().toLowerCase()
+                def ext = filename.tokenize(".")[-1]
 
-                case 'zip':    // uploaded zip
-                    def zipLocation = "/tmp/${UUID.randomUUID().toString()}"
-                    def zipLocationFile = new File("${zipLocation}")
-                    zipLocationFile.mkdirs()
+                // select correct way of processing the file based on extension
+                switch (ext) {
 
-                    def zippedFile = new File("${zipLocation}/zippedFile.zip")
-                    zippedFile.setWritable(true, false) && zippedFile.canWrite()
+                    case 'zip':    // uploaded zip
+                        def zipLocation = "/tmp/${UUID.randomUUID().toString()}"
+                        def zipLocationFile = new File("${zipLocation}")
+                        zipLocationFile.mkdirs()
 
-                    uploadedfile.transferTo(zippedFile)
+                        def zippedFile = new File("${zipLocation}/zippedFile.zip")
+                        zippedFile.setWritable(true, false) && zippedFile.canWrite()
 
-                    def ant = new AntBuilder()
-                    ant.unzip(
-                            src: zippedFile.canonicalPath,
-                            dest: zipLocation,
-                            overwrite: "true"
-                    )
+                        uploadedfile.transferTo(zippedFile)
 
-                    //loop over files from zip and add the mzxml files!!!
-                    zipLocationFile.eachFile {
+                        def ant = new AntBuilder()
+                        ant.unzip(
+                                src: zippedFile.canonicalPath,
+                                dest: zipLocation,
+                                overwrite: "true"
+                        )
 
-                        //determine extension of unzipped files
-                        def unzippedFilename = it.absolutePath.toLowerCase()
-                        def unzippedName = unzippedFilename.tokenize("/")[-1]
-                        def unzippedExt = unzippedName.tokenize(".")[-1]
+                        //loop over files from zip and add the mzxml files!!!
+                        zipLocationFile.eachFile {
 
-                        if (unzippedExt in AcceptedExt) {
-                            def unzippedData = new Data(name: "${unzippedName}", project: project, filename: "${UUID.randomUUID().toString()}").save(flush: true)
-                            ant.copy(file: it, tofile: new File(project.nameOfDirectory() + "/" + unzippedData.filename), overwrite: true)
+                            //determine extension of unzipped files
+                            def unzippedFilename = it.absolutePath.toLowerCase()
+                            def unzippedName = unzippedFilename.tokenize("/")[-1]
+                            def unzippedExt = unzippedName.tokenize(".")[-1]
+
+                            if (unzippedExt in AcceptedExt) {
+                                def unzippedData = new Data(name: "${unzippedName}", project: project, filename: "${UUID.randomUUID().toString()}").save(flush: true)
+                                ant.copy(file: it, tofile: new File(project.nameOfDirectory() + "/" + unzippedData.filename), overwrite: true)
+                            }
                         }
-                    }
 
-                    break
+                        break
 
-                case 'xlsx':
-                case 'xls':
-                case 'csv':
-                case 'tsv':
-                case 'tab':
-                case 'txt':
-                    def newData = new Data(name: "${filename}", project: project, filename: "${UUID.randomUUID().toString()}")
-                    newData.save(flush: true)
-                    uploadedfile.transferTo(new File(project.nameOfDirectory() + "/" + newData.filename))
-                    break
+                    case 'xlsx':
+                    case 'xls':
+                    case 'csv':
+                    case 'tsv':
+                    case 'tab':
+                    case 'txt':
+                        def newData = new Data(name: "${filename}", project: project, filename: "${UUID.randomUUID().toString()}")
+                        newData.save(flush: true)
+                        uploadedfile.transferTo(new File(project.nameOfDirectory() + "/" + newData.filename))
+                        break
 
-                default:    //unsupported file!
-                    log.error("Unsupported filetype!")
+                    default:    //unsupported file!
+                        log.error("Unsupported filetype!")
+                }
             }
+
         }
 
         //return to where you came from...
@@ -267,7 +271,7 @@ class ProjectController {
                 /*
                 ProcessBuilder processBuilder = new ProcessBuilder("/Applications/MATLAB_R2012a.app/Contents/MacOS/StartMATLAB")
                 processBuilder = processBuilder.directory(jobListLocationFile)
-                processBuilder..command("${folderLocation}/${project.name}")
+                processBuilder.command("${folderLocation}/${project.name}")
                 Process p = processBuilder.start()
                 println p.dump()
 
@@ -290,6 +294,90 @@ class ProjectController {
         }
 
         redirect(action: "index", params: [])
+    }
+
+    def generateSampleList = {
+        if (!params?.id) {
+            redirect(action: "index", params: params)
+        }
+
+        def project = Project.get(params.id) ?: null
+        def dataList = project?.datas
+
+        if (params?.submit == "Proceed to Report Settings" && project.equals(null) && dataList) {
+            def folderLocation = grailsApplication.config.dataFolder
+            folderLocation = folderLocation.replaceAll(/"/, '')
+
+            // add measurements files to folder stature
+            def projectFolderLocation = "${folderLocation + File.separator }${project.name}"
+            def projectFolder = new File("${projectFolderLocation}")
+            projectFolder.mkdirs()
+            def inputFolder = new File("${projectFolderLocation + File.separator }input")
+            inputFolder.mkdir()
+            def meaFolder = new File("${projectFolderLocation + File.separator}mea")
+            meaFolder.mkdir()
+            def outputFolder = new File("${projectFolderLocation + File.separator}output")
+            outputFolder.mkdir()
+
+            def ant = new AntBuilder()
+            dataList.each {
+                ant.copy(file: new File(project.nameOfDirectory() + File.separator + it.filename), tofile: new File("${meaFolder}" + File.separator + it.name), overwrite: true)
+            }
+
+            def job = new QCJob(project: project, inputFolder: "${inputFolder}", outputFolder: "${outputFolder}",
+                    meaFolder: "${meaFolder}",
+                    code: "None",
+                    name: project.name,
+                    meaNames: "*.*",
+                    mailTo: "i.ahmad@uva.nl")
+
+            job.save(flush: true)
+
+            render job as JSON
+            return
+
+            def result = runMATLAB("generate_sampleist()", projectFolder)
+            println result.text
+            println result.error
+
+        } else {
+            println("Error: Either one of the Project or Data files are missing... dump:${project}, ${dataList}")
+        }
+
+        redirect(action: "index", params: [])
+    }
+
+    def listQCJob = {
+        if (!params?.id) {
+            response.status = 404 //Not Found
+        }
+        def job = QCJob.get(params.id)
+        if (job.equals(null)) {
+            response.status = 404 //Not Found
+            render """This Job ID="${params?.id}" does not exist. Request must include job ID"""
+        } else {
+            def project = job.project ?: null
+            def dataList = project?.datas
+            if (project.equals(null) && dataList) {
+                render job as JSON
+            } else {
+                response.status = 404 //Not Found
+                render """This Project ID="${project?.id}" does not exist or Data files are missing."""
+            }
+        }
+    }
+
+    def getCorrectedData = {
+        if (!params?.id) {
+        }
+        def project = Project.get(params.id) ?: null
+        if (project) {
+            def folderLocation = grailsApplication.config.dataFolder
+            folderLocation = folderLocation.replaceAll(/"/, '')
+            def projectFolderLocation = "${folderLocation + project.settings.get(0).platforms.toArray()[0].toString()}/${project.name}"
+            def json = new File("${projectFolderLocation + File.separator }output" + File.separator + "correctData.json").text
+            render json as String
+        }
     }
 
     def listSamples = {
@@ -318,5 +406,34 @@ class ProjectController {
             response.status = 404 //Not Found
             render """This Project ID="${params?.id}" does not exist. Request must include project ID"""
         }
+    }
+
+    private runMATLAB(String MATLABScriptName, File baseDir) {
+        def ant = new AntBuilder()
+        def commandLiteral = grailsApplication.config.matlabCommand
+        commandLiteral = commandLiteral.replaceAll(/"/, '')
+        ant.exec(outputproperty: "cmdOut",
+                errorproperty: "cmdErr",
+                resultproperty: "exitValue",
+                failonerror: "true",
+                dir: "${baseDir}",
+                executable: "${commandLiteral}") {
+            arg(line: "-nodesktop -nosplash -logfile /tmp/matlab_log -r \"${MATLABScriptName}\"")
+        }
+
+        def result = new Expando(
+                text: ant.project.properties.cmdOut,
+                error: ant.project.properties.cmdErr,
+                exitValue: ant.project.properties.exitValue as Integer,
+                toString: {text}
+        )
+        if (result.exitValue != 0) {
+            throw new Exception("""command failed with ${result.exitValue}
+                        executed: ${commandLiteral}
+                        error: ${result.error}
+                        text: ${result.text} ${}""")
+
+        }
+        return result
     }
 }

@@ -12,7 +12,7 @@ class Project {
         description(nullable: true, blank: true)
     }
 
-    static transients = ['datas', 'settings', 'samples']
+    static transients = ['datas', 'settings', 'samples','qcJobs']
 
     @Override
     String toString() {
@@ -36,5 +36,9 @@ class Project {
 
     List getSamples() {
         return Sample.findAllByProject(this, [sort: 'sampleOrder', order: 'asc'])
+    }
+
+    List getQcJobs(){
+        return QCJob.findAllByProject(this)
     }
 }

@@ -1,12 +1,9 @@
-import nl.nmc.Data
-import nl.nmc.Project
-import nl.nmc.Sample
-import nl.nmc.Settings
 import nl.nmc.general.config.AdditiveStabilizer
 import nl.nmc.general.config.GeneralConfig
 import nl.nmc.general.config.Matrix
 import nl.nmc.general.config.Platform
 import nl.nmc.importers.GeneralConfigImporter
+import nl.nmc.*
 
 class BootStrap {
     public static def generalConfig;
@@ -52,6 +49,18 @@ class BootStrap {
             returnArray['matrix'] = it.matrixes
             returnArray['stabilizer'] = it.additiveStabilizers
             return returnArray
+        }
+        grails.converters.JSON.registerObjectMarshaller(QCJob) {
+            def JOB_MAP = [
+                    pth: it.inputFolder,
+                    out_path: it.outputFolder,
+                    mea_path: it.meaFolder,
+                    NMCcode: it.code,
+                    JobName: it.name ?: it.project.name,
+                    MeaNames: it.meaNames,
+                    MailTo: it.mailTo
+            ]
+            return JOB_MAP
         }
     }
     def destroy = {

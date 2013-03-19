@@ -6,8 +6,8 @@
 <h2>Upload Measurement Files here!</h2>
 
 <div class="bordered">
-    <g:uploadForm controller="project" action="addFile" id="${project?.id}" name="myUpload">
-        select file: <input type="file" name="fileUpload"/>
+    <g:uploadForm controller="project" action="addFiles" id="${project?.id}" name="myUpload">
+        select file: <input type="file" name="fileUpload" multiple/>
         <g:submitButton name="submit" value="submit"/>
     </g:uploadForm>
 </div>
@@ -19,6 +19,14 @@
     </g:each>
 </ul>
 
+<div style="margin: 5px; width: 40%; border: 5px dotted #FF0000">
+</div>
+<g:form name="proceedToSettings" action="generateSampleList" controller="project" id="${project?.id}">
+    <g:submitButton name="submit" value="Proceed to Report Settings"/>
+</g:form>
+
+<h2>Old Stuff down</h2>
+
 <h2>Settings section</h2>
 
 <div style="margin: 5px; width: 40%; border: 1px dotted #FF0000">
@@ -28,10 +36,17 @@
         <g:submitButton name="submit" value="prepare QC Report"/>
     </g:form>
 
-    <h3>Sample List</h3>
     <g:if test="${project.samples}">
+        <h3>Sample List</h3>
         <ul>
             <li><g:link controller="project" action="viewSampleList" id="${project.id}">Sample List</g:link></li>
+        </ul>
+    </g:if>
+
+    <g:if test="${project.samples.size() > 2}">
+        <h3>QC Report</h3>
+        <ul>
+            <li><g:link controller="project" action="getCorrectedData" id="${project.id}">Corrected Data</g:link></li>
         </ul>
     </g:if>
 </div>
