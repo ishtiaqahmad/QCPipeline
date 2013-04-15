@@ -304,7 +304,7 @@ class ProjectController {
         def project = Project.get(params.id) ?: null
         def dataList = project?.datas
 
-        if (params?.submit == "Proceed to Report Settings" && project.equals(null) && dataList) {
+        if (params?.submit == "Proceed to Report Settings" && project && dataList) {
             def folderLocation = grailsApplication.config.dataFolder
             folderLocation = folderLocation.replaceAll(/"/, '')
 
